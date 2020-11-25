@@ -10,9 +10,9 @@ import {
     ParaUniverse,
     Cash
 } from './ContractInterfaces';
-import { Contracts, ContractData } from './Contracts';
+import { Contracts } from './Contracts';
 import { Dependencies } from './GenericContractInterfaces';
-import { ParaAddresses, SDKConfiguration, mergeConfig } from '@augurproject/utils';
+import { ParaAddresses, SDKConfiguration, mergeConfig, ParaDeploy, validConfigOrDie } from '@augurproject/utils';
 import { updateConfig } from '@augurproject/artifacts';
 import { Block, BlockTag } from '@ethersproject/providers';
 import { stringTo32ByteHex } from './HelperFunctions';
@@ -58,7 +58,7 @@ Deploying to: ${env}
         return this.provider.getBlock('latest').then( (block) => block.number);
     }
 
-    async deploy(env: string, cashAddress: string): Promise<void> {
+    async deploy(env: string, cashAddress: string): Promise<ParaDeploy> {
         const blockNumber = await this.getBlockNumber();
         this.cashAddress = cashAddress;
 
@@ -70,21 +70,30 @@ Deploying to: ${env}
             deployProgress = new BigNumber(await this.paraDeployer.paraDeployProgress_(cashAddress));
         }
 
-        if (cashAddress === this.configuration.addresses.WarpSync && this.configuration.addresses.AMMFactory) {
-            await this.deployWethAMM();
-        }
-
         console.log('Writing artifacts');
         if (this.configuration.deploy.writeArtifacts) {
-          await this.generateLocalEnvFile(env, blockNumber, this.configuration);
+          return this.generateLocalEnvFile(env, blockNumber, this.configuration);
+        } else {
+            return this.buildParaDeploy(blockNumber);
         }
     }
 
-    async deployWethAMM() {
+    async buildParaDeploy(uploadBlockNumber: number): Promise<ParaDeploy> {
+        const addresses = await this.buildParaAddresses();
+        const cash = new Cash(this.dependencies, this.cashAddress);
 
+        const name = await cash.symbol_();
+        const decimals = await cash.decimals_();
+
+        return {
+            name,
+            decimals,
+            uploadBlockNumber,
+            addresses,
+        };
     }
 
-    private async generateLocalEnvFile(env: string, uploadBlockNumber: number, config: SDKConfiguration): Promise<void> {
+    async buildParaAddresses(): Promise<ParaAddresses> {
         const cash = new Cash(this.dependencies, this.cashAddress);
         const paraAugur = new ParaAugur(this.dependencies, await this.paraDeployer.paraAugurs_(this.cashAddress));
         const paraAugurTrading = new ParaAugurTrading(this.dependencies, await this.paraDeployer.paraAugurTradings_(this.cashAddress));
@@ -92,7 +101,7 @@ Deploying to: ${env}
         const paraUniverse = new ParaUniverse(this.dependencies, universeAddress);
         const OICashAddress = await paraUniverse.openInterestCash_();
 
-        const addresses: ParaAddresses = {
+        return {
             Augur: paraAugur.address,
             AugurTrading: paraAugurTrading.address,
             Universe: universeAddress,
@@ -108,21 +117,20 @@ Deploying to: ${env}
             ZeroXTrade: await paraAugurTrading.lookup_(stringTo32ByteHex("ZeroXTrade")),
             ProfitLoss: await paraAugurTrading.lookup_(stringTo32ByteHex("ProfitLoss"))
         };
+    }
 
-        const name = await cash.symbol_();
-        const decimals = await cash.decimals_();
-
-        const configUpdate = {
+    static mergeParaIntoConfig(cashAddress: string, para: ParaDeploy, config: SDKConfiguration): SDKConfiguration {
+        return validConfigOrDie(mergeConfig(config, {
             paraDeploys: {
-                [cash.address]: {
-                    name,
-                    decimals,
-                    uploadBlockNumber,
-                    addresses,
-                }
+                [cashAddress]: para
             }
-        };
+        }))
+    }
 
-        await updateConfig(env, mergeConfig(config, configUpdate));
+    private async generateLocalEnvFile(env: string, uploadBlockNumber: number, config: SDKConfiguration): Promise<ParaDeploy> {
+        const paraDeploy = await this.buildParaDeploy(uploadBlockNumber);
+        const cash = new Cash(this.dependencies, this.cashAddress);
+        await updateConfig(env, ParaAugurDeployer.mergeParaIntoConfig(cash.address, paraDeploy, config));
+        return paraDeploy;
     }
 }

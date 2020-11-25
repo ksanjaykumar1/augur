@@ -5,9 +5,10 @@ import { CompilerOutput } from 'solc';
 import { OINexus } from './ContractInterfaces';
 import { Contracts, ContractData } from './Contracts';
 import { Dependencies, ParaDeployer } from './GenericContractInterfaces';
-import { SDKConfiguration, mergeConfig } from '@augurproject/utils';
+import { SDKConfiguration, mergeConfig, ParaAddresses } from '@augurproject/utils';
 import { updateConfig } from '@augurproject/artifacts';
 import { Block, BlockTag } from '@ethersproject/providers';
+import {ContractAddresses} from '@augurproject/utils/build';
 
 const CONTRACTS = [
     "FeePotFactory",
@@ -66,7 +67,7 @@ Deploying to: ${env}
         return this.provider.getBlock('latest').then( (block) => block.number);
     }
 
-    async deploy(env: string): Promise<void> {
+    async deploy(env: string): Promise<SDKConfiguration> {
         const addresses = {};
 
         for (const contractName of CONTRACTS) {
@@ -126,12 +127,14 @@ Deploying to: ${env}
             await paraDeployer.addToken(this.configuration.deploy.externalAddresses.TBTC, new BigNumber(10**21)); // .01 BTC
         }
 
-        if (!this.configuration.deploy.writeArtifacts) return;
+        if (this.configuration.deploy.writeArtifacts) {
+            await updateConfig(env, mergeConfig(this.configuration, {'addresses': {
+                    "ParaDeployer": paraDeployerAddress,
+                    "OINexus": addresses["OINexus"]
+                }}));
+        }
 
-        await updateConfig(env, mergeConfig(this.configuration, {'addresses': {
-            "ParaDeployer": paraDeployerAddress,
-            "OINexus": addresses["OINexus"]
-        }}));
+        return this.configuration;
     }
 
     getContractAddress = (contractName: string): string => {
