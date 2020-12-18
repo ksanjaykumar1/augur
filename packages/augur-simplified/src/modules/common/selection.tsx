@@ -1,7 +1,14 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import classNames from 'classnames';
 import Styles from 'modules/common/selection.styles.less';
-import { SimpleChevron, UsdIcon } from './icons';
+import {
+  CheckedRadioButton,
+  EmptyCheckbox,
+  FilledCheckbox,
+  RadioButton,
+  SimpleChevron,
+  UsdIcon,
+} from './icons';
 import { USDC } from 'modules/constants';
 
 export interface NameValuePair {
@@ -19,10 +26,8 @@ export interface DropdownProps {
   large?: boolean;
   staticLabel?: string;
   staticMenuLabel?: string;
-  stretchOutOnMobile?: boolean;
   sortByStyles?: object;
   openTop?: boolean;
-  stretchOut?: boolean;
   activeClassName?: string;
   showColor?: boolean;
   disabled?: boolean;
@@ -163,7 +168,6 @@ class Dropdown extends Component<DropdownProps, DropdownState> {
     const {
       sortByStyles,
       large,
-      stretchOutOnMobile,
       openTop,
       className,
       activeClassName,
@@ -181,7 +185,6 @@ class Dropdown extends Component<DropdownProps, DropdownState> {
         className={classNames(className, {
           [Styles.Large]: large,
           [Styles.Normal]: !large,
-          [Styles.stretchOut]: stretchOutOnMobile,
           [Styles.isOpen]: showList,
           [Styles.openTop]: openTop,
           [`${activeClassName}`]: showList,
@@ -254,6 +257,8 @@ class Dropdown extends Component<DropdownProps, DropdownState> {
 
 export const SquareDropdown = (props: DropdownProps) => <Dropdown {...props} />;
 
+export const SmallDropdown = (props: DropdownProps) => <Dropdown {...props} className={Styles.SmallDropdown} />;
+
 const currencyValues = [{ label: USDC, value: USDC, icon: UsdIcon }];
 
 export const CurrencyDropdown = (props: DropdownProps) => (
@@ -264,3 +269,80 @@ export const CurrencyDropdown = (props: DropdownProps) => (
     className={Styles.CurrencyDropdown}
   />
 );
+
+const Checkbox = ({ item, initialSelected, updateSelected }) => {
+  const [selected, setSelected] = useState(initialSelected);
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        setSelected(!selected);
+        updateSelected(!selected);
+      }}
+      className={classNames(Styles.Checkbox, { [Styles.Selected]: selected })}
+    >
+      {selected ? FilledCheckbox : EmptyCheckbox}
+
+      <span>{item.label}</span>
+    </div>
+  );
+};
+
+export const CheckboxGroup = ({ title, items }) => {
+  const [selectedItems, setSelectedItems] = useState(items);
+
+  const updateSelected = (selected, index) => {
+    let updatedItems = selectedItems;
+    updatedItems[index].selected = !updatedItems[index].selected;
+    setSelectedItems(updatedItems);
+  };
+  return (
+    <div className={Styles.SelectionGroup}>
+      <span>{title}</span>
+      <div>
+        {selectedItems.map((item, index) => (
+          <Checkbox
+            item={item}
+            key={item.value}
+            initialSelected={selectedItems[index].selected}
+            updateSelected={(selected) => updateSelected(selected, index)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const RadioBar = ({ item, selected, onClick }) => {
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        onClick(e);
+      }}
+      className={classNames(Styles.RadioBar, { [Styles.Selected]: selected })}
+    >
+      {selected ? CheckedRadioButton : RadioButton}
+      <span>{item.label}</span>
+    </div>
+  );
+};
+
+export const RadioBarGroup = ({ title, items }) => {
+  const [selectedItem, setSelectedItem] = useState(items[0].value);
+  return (
+    <div className={Styles.SelectionGroup}>
+      <span>{title}</span>
+      <div>
+        {items.map((item) => (
+          <RadioBar
+            item={item}
+            key={item.value}
+            selected={selectedItem === item.value}
+            onClick={() => setSelectedItem(item.value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};

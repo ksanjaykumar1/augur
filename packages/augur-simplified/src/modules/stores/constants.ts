@@ -15,14 +15,16 @@ import { formatDai } from 'utils/format-number';
 
 export const STUBBED_APP_STATUS_ACTIONS = {
   setIsMobile: isMobile => {},
-  setFilterSidebar: filterSidebar => {},
+  setSidebar: (sidebarType) => {},
   updateGraphData: graphData => {},
+  setShowTradingForm: showTradingForm => {}
 };
 
 export const DEFAULT_APP_STATUS_STATE = {
   isMobile: false,
-  filterSidebar: false,
+  sidebarType: null,
   loginAccount: null,
+  showTradingForm: false,
   marketInfos: {},
   positions: [],
   liquidity: [],
@@ -30,12 +32,16 @@ export const DEFAULT_APP_STATUS_STATE = {
   userInfo: {
     activity: {},
   },
-  graphData: {},
+  graphData: {
+    markets: {},
+    past: {},
+    paraShareTokens: {},
+  },
 };
 
 export const APP_STATE_KEYS = {
   IS_MOBILE: 'isMobile',
-  FILTER_SIDEBAR: 'filterSidebar',
+  SIDEBAR_TYPE: 'sidebarType',
   LOGIN_ACCOUNT: 'loginAccount',
   MARKET_INFOS: 'marketInfos',
   POSITIONS: 'positions',
@@ -47,8 +53,9 @@ export const APP_STATE_KEYS = {
 
 export const APP_STATUS_ACTIONS = {
   SET_IS_MOBILE: 'SET_IS_MOBILE',
-  SET_FILTER_SIDEBAR: 'SET_FILTER_SIDEBAR',
+  SET_SIDEBAR: 'SET_SIDEBAR',
   UPDATE_GRAPH_DATA: 'UPDATE_GRAPH_DATA',
+  SET_SHOW_TRADING_FORM: 'SET_SHOW_TRADING_FORM'
 };
 
 export const fakePositionsData = [
@@ -162,10 +169,12 @@ export const fakeTransactionsData = {
 };
 
 export const MOCK_APP_STATUS_STATE = {
+  ...DEFAULT_APP_STATUS_STATE,
   positions: fakePositionsData,
   liquidity: fakeLiquidityData,
   transactions: fakeTransactionsData,
-  filterSidebar: false,
+  sidebarType: null,
+  showTradingForm: false,
   marketInfos: {
     '0xdeadbeef': {
       id: '0xdeadbeef',

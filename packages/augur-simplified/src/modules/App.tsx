@@ -22,12 +22,28 @@ function checkIsMobile(setIsMobile) {
 
 const AppBody = () => {
   const {
-    filterSidebar,
+    sidebarType,
+    showTradingForm,
     actions: { setIsMobile, updateGraphData },
   } = useAppStatusStore();
 
   useEffect(() => {
+    // get data immediately, then setup interval
     getMarketsData(updateGraphData);
+    let isMounted = true;
+    const intervalId = setInterval(() => {
+      getMarketsData((data) => {
+        if (isMounted) updateGraphData(data);
+      });
+    }, 15000);
+    return (() => {
+      isMounted = false;
+      clearInterval(intervalId);
+    })
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
     function handleRezize() {
       checkIsMobile(setIsMobile);
     }
@@ -39,9 +55,22 @@ const AppBody = () => {
     // eslint-disable-next-line
   }, []);
 
+
+  useEffect(() => {
+    if (
+      sidebarType || showTradingForm
+    ) {
+      document.body.classList.add('App--noScroll');
+      window.scrollTo(0, 0);
+    } else {
+      document.body.classList.remove('App--noScroll');
+    }
+  }, [sidebarType, showTradingForm]);
+
+
   return (
     <div className={Styles.App}>
-      {filterSidebar && <Sidebar />}
+      {sidebarType && <Sidebar />}
       <TopNav />
       <Routes />
     </div>

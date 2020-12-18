@@ -8,18 +8,15 @@ import {
 import { windowRef } from 'utils/window-ref';
 
 const {
+  SET_SHOW_TRADING_FORM,
   SET_IS_MOBILE,
-  SET_FILTER_SIDEBAR,
+  SET_SIDEBAR,
   UPDATE_GRAPH_DATA,
 } = APP_STATUS_ACTIONS;
 
-const {
-  IS_MOBILE,
-  FILTER_SIDEBAR,
-  GRAPH_DATA,
-} = APP_STATE_KEYS;
+const { IS_MOBILE, SIDEBAR_TYPE, GRAPH_DATA } = APP_STATE_KEYS;
 
-const isAsync = obj => {
+const isAsync = (obj) => {
   return (
     !!obj &&
     (typeof obj === 'object' || typeof obj === 'function') &&
@@ -27,7 +24,7 @@ const isAsync = obj => {
   );
 };
 
-const isPromise = obj => {
+const isPromise = (obj) => {
   return (
     !!obj &&
     (typeof obj === 'object' || typeof obj === 'function') &&
@@ -42,7 +39,7 @@ const middleware = (dispatch, action) => {
       dispatch({ ...action, payload: v });
     })();
   } else if (action.payload && isPromise(action.payload)) {
-    action.payload.then(v => {
+    action.payload.then((v) => {
       dispatch({ ...action, payload: v });
     });
   } else {
@@ -50,10 +47,15 @@ const middleware = (dispatch, action) => {
   }
 };
 
-export const dispatchMiddleware = dispatch => action =>
+export const dispatchMiddleware = (dispatch) => (action) =>
   middleware(dispatch, action);
 
-export const keyedObjToArray = (KeyedObject) => Object.entries(KeyedObject).map(i => i[1]);
+export const keyedObjToArray = (KeyedObject: object) => Object.entries(KeyedObject).map(i => i[1]);
+
+export const arrayToKeyedObject = (ArrayOfObj: Array<{ id: string }>) => ArrayOfObj.reduce((acc, obj) => {
+  acc[obj.id] = obj;
+  return acc;
+}, {});
 
 export function AppStatusReducer(state, action) {
   const updatedState = { ...state };
@@ -62,16 +64,24 @@ export function AppStatusReducer(state, action) {
       updatedState[IS_MOBILE] = action[IS_MOBILE];
       break;
     }
-    case SET_FILTER_SIDEBAR: {
-      updatedState[FILTER_SIDEBAR] = action[FILTER_SIDEBAR];
+    case SET_SIDEBAR: {
+      updatedState[SIDEBAR_TYPE] = action.sidebarType;
       break;
     }
     case UPDATE_GRAPH_DATA: {
-      updatedState[GRAPH_DATA] = action[GRAPH_DATA];
+      updatedState[GRAPH_DATA] = {
+        markets: arrayToKeyedObject(action[GRAPH_DATA].markets),
+        past: arrayToKeyedObject(action[GRAPH_DATA].past),
+        paraShareTokens: arrayToKeyedObject(action[GRAPH_DATA].paraShareTokens),
+      };
+      break;
+    }
+    case SET_SHOW_TRADING_FORM: {
+      updatedState['showTradingForm'] = action.showTradingForm;
       break;
     }
     default:
-    console.log(`Error: ${action.type} not caught by Markets reducer`);
+      console.log(`Error: ${action.type} not caught by Markets reducer`);
   }
   windowRef.appStatus = updatedState;
   return updatedState;
@@ -84,9 +94,12 @@ export const useAppStatus = (defaultState = MOCK_APP_STATUS_STATE) => {
   return {
     ...state,
     actions: {
-      setFilterSidebar: filterSidebar => dispatch({type: SET_FILTER_SIDEBAR, filterSidebar}),
-      setIsMobile: isMobile => dispatch({ type: SET_IS_MOBILE, isMobile }),
-      updateGraphData: graphData => dispatch({ type: UPDATE_GRAPH_DATA, graphData }),
+      setShowTradingForm: (showTradingForm) =>
+        dispatch({ type: SET_SHOW_TRADING_FORM, showTradingForm }),
+      setSidebar: (sidebarType) => dispatch({ type: SET_SIDEBAR, sidebarType }),
+      setIsMobile: (isMobile) => dispatch({ type: SET_IS_MOBILE, isMobile }),
+      updateGraphData: (graphData) =>
+        dispatch({ type: UPDATE_GRAPH_DATA, graphData }),
     },
   };
 };

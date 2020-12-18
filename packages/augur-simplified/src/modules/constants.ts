@@ -58,3 +58,18 @@ export const POPULAR_CATEGORIES_ICONS = {
   [CRYPTO]: CryptoIcon,
   [FINANCE]: FinanceIcon,
 };
+
+// side bar types
+export const NAVIGATION = 'NAVIGATION';
+export const FILTERS = 'FILTERS';
+
+export const SIDEBAR_TYPES = {
+  [NAVIGATION]: NAVIGATION,
+  [FILTERS]: FILTERS
+}
+
+//  transaction types
+export const ALL = 'all';
+export const SWAP = 'swap';
+export const ADD = 'add';
+export const REMOVE = 'remove';

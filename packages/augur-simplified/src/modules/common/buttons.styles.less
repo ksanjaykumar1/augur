@@ -25,30 +25,27 @@
   .Button;
 }
 
-.RoundedButton {
-  .SimpleBorder;
-  
-  background: transparent;
-  box-sizing: border-box;
-  cursor: pointer;
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  justify-content: center;
-  grid-gap: @size-8;
-  outline: none;
+.SmallRoundedButton {
+  .RoundedButton;
 
-  &:hover {
+  color: var(--simple-secondary-text);
+  height: @size-25;
+  min-height: @size-25;
+  max-height: @size-25;
+  padding: @size-4 @size-8;
+  text-transform: capitalize;
+
+  &.selected {
+    color: var(--simple-primary-text);
     border: @size-1 solid var(--simple-secondary-text);
   }
 }
 
-
 .SecondaryButton {
   .Button;
 
-  background: var(--simple-buy-15);
-  border: @size-1 solid var(--simple-buy);
+  background: var(--simple-yes-15);
+  border: @size-1 solid var(--simple-yes);
 }
 
 .DirectionButton {
